@@ -58,13 +58,17 @@ require "./hit.pl";
 require "./mirrors.pl";
 
 my @allConfs = ("default","rga_fall2018","rgc_summer2022");
+#my @allConfs = ("rga_fall2018");
+my $runnum = 11;
+
 foreach my $variation (@allConfs){
     print("variation: " );
     print($variation);
     print("\n");
 
     $configuration{"variation"} = $variation;
-    system(join(' ', 'groovy -cp "$COATJAVA/lib/clas/*" factory.groovy', $variation));
+    system(join(' ', 'groovy -cp "$COATJAVA/lib/clas/*" factory.groovy', $variation));  
+    system(join(' ', 'groovy -cp "$COATJAVA/lib/clas/*" alignment_gen.groovy', $variation, $runnum));
     our @volumes = get_volumes(%configuration);    
 
     coatjava::makeRICHcad($variation);
@@ -85,7 +89,7 @@ foreach my $variation (@allConfs){
     foreach my $sector (@sectors){
 	define_aerogels($sector);
 	buildMirrorsSurfaces($sector);
-	coatjava::makeRICHtext($sector);
+	coatjava::makeRICHtext($sector,$variation);
 	print("temporary: copying RICH mother volume stl file \n");
 	copy("cadTemp/RICH_mother_corrected.stl","cad_".$variation."/RICH_s".$sector.".stl");
 
