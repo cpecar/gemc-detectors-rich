@@ -94,13 +94,18 @@ sector = 4;
 
 new File(outfile).withWriter('UTF-8') { writer ->
 
+bary_centers_aero = [ new Vector3D(-81.690700739 as Double, 0.0 as Double, 570.4760668 as Double),
+		  new Vector3D(-140.70222857 as Double, 0.0 as Double, 542.9685822 as Double),
+		  new Vector3D(-195.78009408 as Double, 0.0 as Double, 516.9322671 as Double),
+		  new Vector3D(-194.51262244 as Double, 0.0 as Double, 514.2131666 as Double)]
+		  
+
 layers_global = [0,1,2,3,12,4,5,6,7,8,9,10] // layers where each component only gets global layer alignment
 // AEROGEL+MAPMT LOOP: aligning each full aerogel/mapmt layer
 for(int i = 0; i < layers_global.size(); i++){
 	RICHLayer layer = geoFactory.get_Layer(4,layers_global[i]);
 	
-	System.out.println(layer.name());
-	System.out.println("layer size: " + layer.size());
+	System.out.println(layer.name());	
 	def layerid = layer.id();
 	
 	RICHFrame lframe = layer.generate_LocalRef();
@@ -116,12 +121,14 @@ for(int i = 0; i < layers_global.size(); i++){
 
 	Vector3D lshift = geoCal.get_AlignShift(4,layerid+1,0);
 	Vector3D langle = geoCal.get_AlignAngle(4,layerid+1,0);
-
-	System.out.println("lshift: " + lshift);
-	System.out.println("langle: " + langle);
 	
-	Vector3D lbary = lframe.bref();
-
+	Vector3D lbary;
+	if(i < 4){
+	     lbary = bary_centers_aero[i];
+	}
+	else{
+		lbary  = lframe.bref();
+	}
 	Vector3D langle_lab = toLabFrame(langle, lframe);
 	Vector3D lshift_lab = toLabFrame(lshift, lframe);
 
@@ -173,8 +180,6 @@ for(int i = 0; i < layers_global.size(); i++){
 
 // spherical mirror alignment: individual component only
 RICHLayer layer = geoFactory.get_Layer(4,11);
-System.out.println(layer.name());
-System.out.println("layer size: " + layer.size());
 def layerid = layer.id();
 RICHFrame lframe = layer.generate_LocalRef();
 
