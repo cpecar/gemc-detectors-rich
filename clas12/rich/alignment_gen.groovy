@@ -94,12 +94,23 @@ sector = 4;
 
 new File(outfile).withWriter('UTF-8') { writer ->
 
+
+
+// values taken from coatjava layer
 bary_centers_aero = [ new Vector3D(-81.690700739 as Double, 0.0 as Double, 570.4760668 as Double),
 		  new Vector3D(-140.70222857 as Double, 0.0 as Double, 542.9685822 as Double),
 		  new Vector3D(-195.78009408 as Double, 0.0 as Double, 516.9322671 as Double),
 		  new Vector3D(-194.51262244 as Double, 0.0 as Double, 514.2131666 as Double)]
-		  
 
+/*
+// values from exact stl COM
+bary_centers_aero = [ new Vector3D(-8.26526909e+01, 0, 5.68929563e+02),
+                  new Vector3D(-1.40537275e+02, 0, 5.41947407e+02),
+                  new Vector3D(-1.95363214e+02, 0, 5.15480962e+02),
+                  new Vector3D(-1.94095351e+02, 0, 5.12762067e+02)];
+
+bary_center_301_2 = new Vector3D(-1.40137909e+02,  0,  5.40990116e+02);
+*/
 layers_global = [0,1,2,3,12,4,5,6,7,8,9,10] // layers where each component only gets global layer alignment
 // AEROGEL+MAPMT LOOP: aligning each full aerogel/mapmt layer
 for(int i = 0; i < layers_global.size(); i++){
@@ -127,7 +138,7 @@ for(int i = 0; i < layers_global.size(); i++){
 	     lbary = bary_centers_aero[i];
 	}
 	else{
-		lbary  = lframe.bref();
+		lbary = lframe.bref();
 	}
 	Vector3D langle_lab = toLabFrame(langle, lframe);
 	Vector3D lshift_lab = toLabFrame(lshift, lframe);
