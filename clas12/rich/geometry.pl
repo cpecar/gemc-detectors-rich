@@ -10,6 +10,23 @@ use GXML;
 my ($mothers, $positions, $rotations, $types, $dimensions, $ids);
 
 
+sub getAlignment
+{
+    my ($filename, $target_sector, $target_layer, $target_component) = @_;
+    open my $fh, '<', $filename or return (0,0,0,0,0,0);
+    while (my $line = <$fh>) {
+        chomp $line;
+        my ($sector, $layer, $component, $thx, $thy, $thz, $x, $y, $z) = split ' ', $line;
+        
+        if ($sector == $target_sector && $layer == $target_layer && $component == $target_component) {
+            close $fh;
+            return ($x, $y, $z, $thx, $thy, $thz);
+        }
+    }
+    close $fh;
+    return (0,0,0,0,0,0);
+}
+
 sub makeRICH
 {
 	($mothers, $positions, $rotations, $types, $dimensions, $ids) = @main::volumes;
@@ -29,7 +46,8 @@ sub makeRICHtext
 
     ($mothers, $positions, $rotations, $types, $dimensions, $ids) = @main::volumes;
     my $sector = shift;
-    build_text($sector);
+    my $variation = shift;
+    build_text($sector,$variation);
 }
 
 sub build_gxml
@@ -72,8 +90,9 @@ sub build_gxml
 sub build_text
 {
     my $sector = shift;
+    my $variation = shift;
     #build_SphericalMirrors($sector);
-    build_PMTs($sector);    
+    build_PMTs($sector,$variation);    
 }
 
 sub build_MESH
@@ -83,7 +102,9 @@ sub build_MESH
 	my $variation = shift;
 	my $sectorsuffix = "_s" . $sector;
 	
-	my @allMeshes =("RICH_s4","Aluminum","CFRP","TedlarWrapping","MirrorSupport");
+	my @allMeshes =("RICH_s4","Aluminum","CFRP",
+			#"TedlarWrapping",
+			"MirrorSupport");
 	foreach my $mesh (@allMeshes)
 	{
 		my %detector = init_det();
@@ -160,7 +181,14 @@ sub build_Elements
     my $Max_Layer301=7;
     my $Max_Layer302=10;
     
+    my $align_filename = 'transformations_'.$variation.'.txt';
+
     my $Layer=201;
+    my ($target_sector, $target_layer, $target_component) = ($sector, 0, 0);
+    my ($x,$y,$z,$thx,$thy,$thz) = getAlignment($align_filename,$target_sector, $target_layer, $target_component);
+
+    print "l201 shift: $x $y $z $thx $thy $thz \n";
+    
     for (my $Component=1; $Component <= $Max_Layer201; $Component++) {
         my $MaterialName='aerogel_sector'.$sector.'_layer'.$Layer.'_component'.$Component;
         my $Sensitivity = 'mirror: aerogel_surface_roughness';
@@ -168,8 +196,8 @@ sub build_Elements
         my %detector = init_det();
         my $vname                = $mesh;
         $detector{"name"}        = $vname.$sectorsuffix;
-        $detector{"pos"}         = $positions->{$vname};
-	$detector{"rotation"}    = $rotations->{$vname};
+        $detector{"pos"}         = "$x*cm $y*cm $z*cm";
+	$detector{"rotation"}    = "ordered: zyx $thz*rad $thy*rad $thx*rad";
         $detector{"mother"}      = $mothers->{$vname};
         $detector{"color"}       = "4444ff";
         $detector{"material"}    = $MaterialName;
@@ -182,84 +210,98 @@ sub build_Elements
 
 
 
- $Layer=202;
-for (my $Component=1; $Component <= $Max_Layer202; $Component++) {
-    my $MaterialName='aerogel_sector'.$sector.'_layer'.$Layer.'_component'.$Component;
-    my $Sensitivity = 'mirror: aerogel_surface_roughness';
-    my $mesh = 'Layer_'.$Layer.'_component_'.$Component;
-    my %detector = init_det();
-    my $vname                = $mesh;
-    $detector{"name"}        = $vname.$sectorsuffix;
-    $detector{"pos"}         = $positions->{$vname};
-    $detector{"rotation"}    = $rotations->{$vname};
-    $detector{"mother"}      = $mothers->{$vname};
-    $detector{"color"}       = "4444ff";
-    $detector{"material"}    = $MaterialName;
-    $detector{"sensitivity"} = $Sensitivity;
-    $detector{"hitType"}    =  "mirror";
-    $detector{"identifiers"}    = "aerogel";
-    $detector{"mother"}      = "RICH" . $sectorsuffix;
-    $gxmlFile->add(\%detector);
-}
+    $Layer=202;
+    ($target_sector, $target_layer, $target_component) = ($sector, 1, 0);
+    ($x,$y,$z,$thx,$thy,$thz) = getAlignment($align_filename,$target_sector, $target_layer, $target_component);
+
+    print "l202 shift: $x $y $z $thx $thy $thz \n";
+
+    for (my $Component=1; $Component <= $Max_Layer202; $Component++) {
+	my $MaterialName='aerogel_sector'.$sector.'_layer'.$Layer.'_component'.$Component;
+	my $Sensitivity = 'mirror: aerogel_surface_roughness';
+	my $mesh = 'Layer_'.$Layer.'_component_'.$Component;
+	my %detector = init_det();
+	my $vname                = $mesh;
+	$detector{"name"}        = $vname.$sectorsuffix;
+	$detector{"pos"}         = "$x*cm $y*cm $z*cm";
+	$detector{"rotation"}    = "ordered: zyx $thz*rad $thy*rad $thx*rad";
+	$detector{"mother"}      = $mothers->{$vname};
+	$detector{"color"}       = "4444ff";
+	$detector{"material"}    = $MaterialName;
+	$detector{"sensitivity"} = $Sensitivity;
+	$detector{"hitType"}    =  "mirror";
+	$detector{"identifiers"}    = "aerogel";
+	$detector{"mother"}      = "RICH" . $sectorsuffix;
+	$gxmlFile->add(\%detector);
+    }
 
 
-$Layer=203;
-for (my $Component=1; $Component <= $Max_Layer203; $Component++) {
-    my $MaterialName='aerogel_sector'.$sector.'_layer'.$Layer.'_component'.$Component;
-    my $Sensitivity = 'mirror: aerogel_surface_roughness';
-    my $mesh = 'Layer_'.$Layer.'_component_'.$Component;
-    my %detector = init_det();
-    my $vname                = $mesh;
-    $detector{"name"}        = $vname.$sectorsuffix;
-    $detector{"pos"}         = $positions->{$vname};
-    $detector{"rotation"}    = $rotations->{$vname};
-    $detector{"mother"}      = $mothers->{$vname};
-    $detector{"color"}       = "4444ff";
-    $detector{"material"}    = $MaterialName;
-    $detector{"sensitivity"} = $Sensitivity;
-    $detector{"hitType"}    =  "mirror";
-    $detector{"identifiers"}    = "aerogel";
-    $detector{"mother"}      = "RICH" . $sectorsuffix;
-    $gxmlFile->add(\%detector);
-}
+    $Layer=203;
+    ($target_sector, $target_layer, $target_component) = ($sector, 2, 0);
+    ($x,$y,$z,$thx,$thy,$thz) = getAlignment($align_filename,$target_sector, $target_layer, $target_component);
+
+    for (my $Component=1; $Component <= $Max_Layer203; $Component++) {
+	my $MaterialName='aerogel_sector'.$sector.'_layer'.$Layer.'_component'.$Component;
+	my $Sensitivity = 'mirror: aerogel_surface_roughness';
+	my $mesh = 'Layer_'.$Layer.'_component_'.$Component;
+	my %detector = init_det();
+	my $vname                = $mesh;
+	$detector{"name"}        = $vname.$sectorsuffix;
+        $detector{"pos"}         = "$x*cm $y*cm $z*cm";
+        $detector{"rotation"}    = "ordered: zyx $thz*rad $thy*rad $thx*rad";
+	$detector{"mother"}      = $mothers->{$vname};
+	$detector{"color"}       = "4444ff";
+	$detector{"material"}    = $MaterialName;
+	$detector{"sensitivity"} = $Sensitivity;
+	$detector{"hitType"}    =  "mirror";
+	$detector{"identifiers"}    = "aerogel";
+	$detector{"mother"}      = "RICH" . $sectorsuffix;
+	$gxmlFile->add(\%detector);
+    }
 
 
-$Layer=204;
-for (my $Component=1; $Component <= $Max_Layer204; $Component++) {
-    my $MaterialName='aerogel_sector'.$sector.'_layer'.$Layer.'_component'.$Component;
-    my $Sensitivity = 'mirror: aerogel_surface_roughness';
-    my $mesh = 'Layer_'.$Layer.'_component_'.$Component;
-    my %detector = init_det();
-    my $vname                = $mesh;
-    $detector{"name"}        = $vname.$sectorsuffix;
-    $detector{"pos"}         = $positions->{$vname};
-    $detector{"rotation"}    = $rotations->{$vname};
-    $detector{"mother"}      = "RICH" . $sectorsuffix;
-    $detector{"color"}       = "4444ff";
-    $detector{"material"}    = $MaterialName;
-    $detector{"sensitivity"} = $Sensitivity;
-    $detector{"hitType"}    =  "mirror";
-    $detector{"identifiers"}    = "aluminum";
-    $gxmlFile->add(\%detector);
-}
+    $Layer=204;
+    ($target_sector, $target_layer, $target_component) = ($sector, 3, 0);
+    ($x,$y,$z,$thx,$thy,$thz) = getAlignment($align_filename,$target_sector, $target_layer, $target_component);
     
-$Layer=301;
-for (my $Component=1; $Component <= $Max_Layer301 ; $Component++) {
-    my $MaterialName='mirror_sector'.$sector.'_layer'.$Layer.'_component'.$Component;
-    my $mesh = 'Layer_'.$Layer.'_component_'.$Component;
-    my %detector = init_det();
-    my $vname                = $mesh;
-    $detector{"name"}        = $vname.$sectorsuffix;
-    $detector{"pos"}         = $positions->{$vname};
-    $detector{"rotation"}    = $rotations->{$vname};    
-    $detector{"mother"}      = "RICH" . $sectorsuffix;
-    $detector{"color"}       = "cc99ff";
-    $detector{"material"}    = "G4_Pyrex_Glass";
-    $detector{"hitType"}    = 'mirror';
-    $detector{"sensitivity"} = "mirror: rich_s".$sector."_mirror_planar_comp_".$Component;
-    $detector{"identifiers"} = 'sector manual '.$Component;
-    $gxmlFile->add(\%detector);
-  }
+    for (my $Component=1; $Component <= $Max_Layer204; $Component++) {
+	my $MaterialName='aerogel_sector'.$sector.'_layer'.$Layer.'_component'.$Component;
+	my $Sensitivity = 'mirror: aerogel_surface_roughness';
+	my $mesh = 'Layer_'.$Layer.'_component_'.$Component;
+	my %detector = init_det();
+	my $vname                = $mesh;
+	$detector{"name"}        = $vname.$sectorsuffix;
+        $detector{"pos"}         = "$x*cm $y*cm $z*cm";
+        $detector{"rotation"}    = "ordered: zyx $thz*rad $thy*rad $thx*rad";
+	$detector{"mother"}      = "RICH" . $sectorsuffix;
+	$detector{"color"}       = "4444ff";
+	$detector{"material"}    = $MaterialName;
+	$detector{"sensitivity"} = $Sensitivity;
+	$detector{"hitType"}    =  "mirror";
+	$detector{"identifiers"}    = "aluminum";
+	$gxmlFile->add(\%detector);
+    }
+    
+    $Layer=301;
+    for (my $Component=1; $Component <= $Max_Layer301 ; $Component++) {
+	($target_sector, $target_layer, $target_component) = ($sector, $Component+3, 0);
+	($x,$y,$z,$thx,$thy,$thz) = getAlignment($align_filename,$target_sector, $target_layer, $target_component);
+	
+	my $MaterialName='mirror_sector'.$sector.'_layer'.$Layer.'_component'.$Component;
+	my $mesh = 'Layer_'.$Layer.'_component_'.$Component;
+	my %detector = init_det();
+	my $vname                = $mesh;
+	$detector{"name"}        = $vname.$sectorsuffix;
+        $detector{"pos"}         = "$x*cm $y*cm $z*cm";
+        $detector{"rotation"}    = "ordered: zyx $thz*rad $thy*rad $thx*rad";
+	$detector{"mother"}      = "RICH" . $sectorsuffix;
+	$detector{"color"}       = "cc99ff";
+	$detector{"material"}    = "G4_Pyrex_Glass";
+	$detector{"hitType"}    = 'mirror';
+	$detector{"sensitivity"} = "mirror: rich_s".$sector."_mirror_planar_comp_".$Component;
+	$detector{"identifiers"} = 'sector manual '.$Component;
+	$gxmlFile->add(\%detector);
+    }
 }
 
 
@@ -270,8 +312,15 @@ sub build_PMTs{
     my $nPMTS  = 0 ;
 
     my $sector = shift;
+    my $variation = shift; 
     my $sectorsuffix = "_s" . $sector;
     
+    my $align_filename = 'transformations_'.$variation.'.txt';
+    my ($target_sector, $target_layer, $target_component) = ($sector, 12, 0);
+    my ($x,$y,$z,$thx,$thy,$thz) = getAlignment($align_filename,$target_sector, $target_layer, $target_component);
+
+
+
     my $PMT_rows = 23;
     for(my $irow=0; $irow<$PMT_rows; $irow++){
 	my $nPMTInARow = 6 + $irow;
@@ -287,8 +336,8 @@ sub build_PMTs{
 	    $detector{"name"}        = "$vname" . $sectorsuffix;
 	    $detector{"mother"}      = "RICH".$sectorsuffix;
 	    $detector{"description"} = "PMT mother volume";
-	    $detector{"pos"}         = $positions->{$vname};
-	    $detector{"rotation"}    = $rotations->{$vname};
+	    $detector{"pos"}         = "$x*cm $y*cm $z*cm";
+	    $detector{"rotation"}    = "ordered: zyx $thz*rad $thy*rad $thx*rad";
 	    $detector{"color"}       = "444444";
 	    $detector{"type"}        = $types->{$vname};
 	    $detector{"dimensions"}  = $dimensions->{$vname};
