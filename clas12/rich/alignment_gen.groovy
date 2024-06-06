@@ -111,6 +111,28 @@ bary_centers_aero = [ new Vector3D(-8.26526909e+01, 0, 5.68929563e+02),
 
 bary_center_301_2 = new Vector3D(-1.40137909e+02,  0,  5.40990116e+02);
 */
+
+// GLOBAL RICH ALIGNMENT
+RICHFrame rich_frame;
+if(sector == 4){
+	rich_frame = geoFactory.richframes.get(0);
+	sector_rot = 0;
+}
+else{
+	rich_frame = geoFactory.richframes.get(1);
+	sector_rot = 180;
+}
+
+Vector3D mothershift = geoCal.get_AlignShift(4,0,0);
+Vector3D motherangle = geoCal.get_AlignAngle(4,0,0);
+Vector3D motherangle_lab = toLabFrame(motherangle, rich_frame);
+Vector3D mothershift_lab = toLabFrame(mothershift, rich_frame);
+
+
+String line = String.format("%d 0 0 %.8f %.8f %.8f %.8f %.8f %.8f ", sector, motherangle_lab.x, motherangle_lab.y, motherangle_lab.z + sector_rot,
+       	      			    	      	   	     	     	     mothershift_lab.x, mothershift_lab.y, mothershift_lab.z);
+writer.writeLine(line);
+
 layers_global = [0,1,2,3,12,4,5,6,7,8,9,10] // layers where each component only gets global layer alignment
 // AEROGEL+MAPMT LOOP: aligning each full aerogel/mapmt layer
 for(int i = 0; i < layers_global.size(); i++){
@@ -120,15 +142,6 @@ for(int i = 0; i < layers_global.size(); i++){
 	def layerid = layer.id();
 	
 	RICHFrame lframe = layer.generate_LocalRef();
-	RICHFrame rich_frame;
-	if(sector == 4){
-		rich_frame = geoFactory.richframes.get(0);
-	}
-	else{
-		rich_frame = geoFactory.richframes.get(1);
-	}
-	Vector3D mothershift = geoCal.get_AlignShift(4,0,0);
-	Vector3D motherangle = geoCal.get_AlignAngle(4,0,0);
 
 	Vector3D lshift = geoCal.get_AlignShift(4,layerid+1,0);
 	Vector3D langle = geoCal.get_AlignAngle(4,layerid+1,0);
@@ -142,10 +155,6 @@ for(int i = 0; i < layers_global.size(); i++){
 	}
 	Vector3D langle_lab = toLabFrame(langle, lframe);
 	Vector3D lshift_lab = toLabFrame(lshift, lframe);
-
-	Vector3D motherangle_lab = toLabFrame(motherangle, rich_frame);
-	Vector3D mothershift_lab = toLabFrame(mothershift, rich_frame);
-
 	
 	xang = langle_lab.x;
 	yang = langle_lab.y;
@@ -184,7 +193,7 @@ for(int i = 0; i < layers_global.size(); i++){
 	println "l$layerid angles after inversion: $xang $yang $zang";
 	
 	//String line = "$sector $layerid 0 $xang $yang $zang $xshift $yshift $zshift";
-	String line = String.format("%d %d 0 %.8f %.8f %.8f %.8f %.8f %.8f ", sector, layerid, xang, yang, zang, xshift, yshift, zshift)
+	line = String.format("%d %d 0 %.8f %.8f %.8f %.8f %.8f %.8f ", sector, layerid+1, xang, yang, zang, xshift, yshift, zshift)
 
 	writer.writeLine(line);
 }
@@ -237,8 +246,9 @@ for(int i = 0; i < layer.size(); i++){
 	xang = newAngles[0]
 	yang = newAngles[1]
 	zang = newAngles[2]
-	
-        String line = "$sector $layerid $i $xang $yang $zang $xshift $yshift $zshift";
+
+        line = String.format("%d %d 0 %.8f %.8f %.8f %.8f %.8f %.8f ", sector, layerid+1, xang, yang, zang, xshift, yshift, zshift)
+        //String line = "$sector $layerid $i $xang $yang $zang $xshift $yshift $zshift";
         writer.writeLine(line);
 
 

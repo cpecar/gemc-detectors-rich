@@ -77,7 +77,7 @@ sub build_gxml
 	    print("\n");
 	    build_MESH($gxmlFile,$sector,$variation);
 	    build_Elements($gxmlFile,$sector,$variation);
-	    build_SphericalMirrors($sector,$gxmlFile);
+	    build_SphericalMirrors($sector,$gxmlFile,$variation);
 	    my $sectorsuffix = "_s" . $sector;
 	    #my @files = ($dirName.'/Layer_302_component_1'.$sectorsuffix.'.stl',$dirName.'/Layer_302_component_2'.$sectorsuffix.'.stl',$dirName.'/Layer_302_component_3'.$sectorsuffix.'.stl',$dirName.'/Layer_302_component_4'.$sectorsuffix.'.stl',$dirName.'/Layer_302_component_5'.$sectorsuffix.'.stl',$dirName.'/Layer_302_component_6'.$sectorsuffix.'.stl',$dirName.'/Layer_302_component_7'.$sectorsuffix.'.stl',$dirName.'/Layer_302_component_8'.$sectorsuffix.'.stl',$dirName.'/Layer_302_component_9'.$sectorsuffix.'.stl',$dirName.'/Layer_302_component_10'.$sectorsuffix.'.stl');
 	    #my $removed = unlink(@files);
@@ -101,7 +101,11 @@ sub build_MESH
 	my $sector = shift;
 	my $variation = shift;
 	my $sectorsuffix = "_s" . $sector;
-	
+
+	my $align_filename = 'transformations_'.$variation.'.txt';
+	my ($target_sector, $target_layer, $target_component) = ($sector, 0, 0);
+	my ($x,$y,$z,$thx,$thy,$thz) = getAlignment($align_filename,$target_sector, $target_layer, $target_component);
+
 	my @allMeshes =("RICH_s4","Aluminum","CFRP",
 			#"TedlarWrapping",
 			"MirrorSupport");
@@ -115,8 +119,8 @@ sub build_MESH
 		    $detector{"name"} = "RICH" . $sectorsuffix;
 		}		
 		$detector{"pos"}         = $positions->{$vname};
-		if($mesh eq "RICH_s4" and ($variation eq "rga_fall2018" or $variation eq "rgc_summer2022")){
-		    $detector{"pos"} = "0*cm 0*cm 5*cm";
+		if($mesh eq "RICH_s4"){# and ($variation eq "rga_fall2018" or $variation eq "rgc_summer2022")){
+		    $detector{"pos"} = "$x*cm $y*cm $z*cm";
 		}
 		#rotate mesh for sector 1 180 deg. around z
 		$detector{"rotation"}    = $rotations->{$vname};
@@ -184,7 +188,7 @@ sub build_Elements
     my $align_filename = 'transformations_'.$variation.'.txt';
 
     my $Layer=201;
-    my ($target_sector, $target_layer, $target_component) = ($sector, 0, 0);
+    my ($target_sector, $target_layer, $target_component) = ($sector, 1, 0);
     my ($x,$y,$z,$thx,$thy,$thz) = getAlignment($align_filename,$target_sector, $target_layer, $target_component);
 
     print "l201 shift: $x $y $z $thx $thy $thz \n";
@@ -211,7 +215,7 @@ sub build_Elements
 
 
     $Layer=202;
-    ($target_sector, $target_layer, $target_component) = ($sector, 1, 0);
+    ($target_sector, $target_layer, $target_component) = ($sector, 2, 0);
     ($x,$y,$z,$thx,$thy,$thz) = getAlignment($align_filename,$target_sector, $target_layer, $target_component);
 
     print "l202 shift: $x $y $z $thx $thy $thz \n";
@@ -237,7 +241,7 @@ sub build_Elements
 
 
     $Layer=203;
-    ($target_sector, $target_layer, $target_component) = ($sector, 2, 0);
+    ($target_sector, $target_layer, $target_component) = ($sector, 3, 0);
     ($x,$y,$z,$thx,$thy,$thz) = getAlignment($align_filename,$target_sector, $target_layer, $target_component);
 
     for (my $Component=1; $Component <= $Max_Layer203; $Component++) {
@@ -261,7 +265,7 @@ sub build_Elements
 
 
     $Layer=204;
-    ($target_sector, $target_layer, $target_component) = ($sector, 3, 0);
+    ($target_sector, $target_layer, $target_component) = ($sector, 4, 0);
     ($x,$y,$z,$thx,$thy,$thz) = getAlignment($align_filename,$target_sector, $target_layer, $target_component);
     
     for (my $Component=1; $Component <= $Max_Layer204; $Component++) {
@@ -284,7 +288,7 @@ sub build_Elements
     
     $Layer=301;
     for (my $Component=1; $Component <= $Max_Layer301 ; $Component++) {
-	($target_sector, $target_layer, $target_component) = ($sector, $Component+3, 0);
+	($target_sector, $target_layer, $target_component) = ($sector, $Component+4, 0);
 	($x,$y,$z,$thx,$thy,$thz) = getAlignment($align_filename,$target_sector, $target_layer, $target_component);
 	
 	my $MaterialName='mirror_sector'.$sector.'_layer'.$Layer.'_component'.$Component;
@@ -316,7 +320,7 @@ sub build_PMTs{
     my $sectorsuffix = "_s" . $sector;
     
     my $align_filename = 'transformations_'.$variation.'.txt';
-    my ($target_sector, $target_layer, $target_component) = ($sector, 12, 0);
+    my ($target_sector, $target_layer, $target_component) = ($sector, 13, 0);
     my ($x,$y,$z,$thx,$thy,$thz) = getAlignment($align_filename,$target_sector, $target_layer, $target_component);
 
 
@@ -420,6 +424,9 @@ sub build_SphericalMirrors
     my $sectorsuffix = "_s" . $sector;
 
     my $gxmlFile = shift;
+    my $variation = shift;
+
+    my $align_filename = 'transformations_'.$variation.'.txt';
 
     my $RadiusSphere= 2700.00;
     my $RadiusSphereFinal= 2701.00;
@@ -429,13 +436,16 @@ sub build_SphericalMirrors
     # Naming convention: Layer_302_component_1'.$sectorsuffix.'.stl'
     for (my $Component=1; $Component <= 10; $Component++) {
 
+	my ($target_sector, $target_layer, $target_component) = ($sector, 12, $Component-1);
+	my ($x,$y,$z,$thx,$thy,$thz) = getAlignment($align_filename,$target_sector, $target_layer, $target_component);
+
 	my $MaterialName='mirror_sector'.$sector.'_layer302_component'.$Component;
 	my $mesh = 'Layer_302_component_'.$Component;
 	my %detector = init_det();
 	my $vname                = $mesh;
 	$detector{"name"}        = $vname.$sectorsuffix;
-	$detector{"pos"}         = $positions->{$vname};
-	$detector{"rotation"}    = $rotations->{$vname};
+        $detector{"pos"}         = "$x*cm $y*cm $z*cm";
+        $detector{"rotation"}    = "ordered: zyx $thz*rad $thy*rad $thx*rad";
 	$detector{"mother"}      = "RICH" . $sectorsuffix;
 	$detector{"color"}       = "cc99ff";
 	$detector{"material"}    = "CarbonFiber";
